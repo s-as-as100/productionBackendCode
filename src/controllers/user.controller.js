@@ -102,12 +102,12 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "user name or email is required");
   }
   const user = await User.findOne({
-    $or: [{userName}, {email}]
-})
+    $or: [{ userName }, { email }],
+  });
 
-if (!user) {
-    throw new ApiError(404, "User does not exist")
-}
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
 
@@ -144,8 +144,6 @@ if (!user) {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  // remove cookies
-  // remove access token  ;
   await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -157,15 +155,17 @@ const logoutUser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
+
   const options = {
     httpOnly: true,
     secure: true,
   };
+
   return res
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged out successfully"));
+    .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
 export { registerUser, loginUser, logoutUser };
