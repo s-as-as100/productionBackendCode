@@ -11,10 +11,8 @@ const generateAccessAndRefreshToken = async (userID) => {
     const user = await User.findById(userID);
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
-
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
-
     return {
       accessToken,
       refreshToken,
@@ -67,6 +65,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   const coverImage = await uploadOnCloudinary(coverImagePath);
+
   if (!avatar) {
     throw new ApiError(400, "Avatar is required");
   }
@@ -78,6 +77,7 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     userName: userName.toLowerCase(),
   });
+
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
@@ -149,8 +149,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        refreshToken: 1, // this remove the field of the document,
       },
     },
     {
@@ -227,7 +227,6 @@ const changePassword = asyncHandler(async (req, res) => {
   // check old password is correct or not
 
   const { oldPassword, newPassword } = req.body;
-
   const user = await User.findById(req.user?._id);
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
   if (!isPasswordCorrect) {
@@ -458,14 +457,14 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     },
   ]);
   return res
-  .status(200)
-  .json(
+    .status(200)
+    .json(
       new ApiResponse(
-          200,
-          user[0].watchHistory,
-          "Watch history fetched successfully"
+        200,
+        user[0].watchHistory,
+        "Watch history fetched successfully"
       )
-  )
+    );
 });
 
 export {
