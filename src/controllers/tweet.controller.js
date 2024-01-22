@@ -37,15 +37,97 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // get user tweets
-  
+
+  try {
+    // 1. find user id
+    // 2. check if userId present or not
+    // 3.  find in the database
+    const userId = req.user._id;
+    if (!userId) {
+      throw new ApiError(401, "you don't have access to get user tweets");
+    }
+
+    const allUserTweets = await Tweet.findOne({
+      owner: new mongoose.Types.ObjectId(userId),
+    });
+    if (!allUserTweets) {
+      throw new ApiError(500, "Something went wrong");
+    }
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          allUserTweets,
+        },
+        "tweets fetched successfully"
+      )
+    );
+  } catch (error) {
+    throw new ApiError(400, error.message || "Error during get user tweets");
+  }
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
-  //TODO: update tweet
+  //update tweet
+  // 1. find user id
+  // 2. get comment id and content
+  // 3. user id present or not present
+  // 4.
+  try {
+    const userId = req.user._id;
+    const { commentId } = req.params;
+    const { content } = req.body;
+    if (!userId) {
+      throw new ApiError(401, "you don't have access to get user tweets");
+    }
+    const ownerDetails = await Tweet.findOne({
+      owner: new mongoose.Types.ObjectId(userId),
+    }).select("-content");
+    if (!ownerDetails) throw new ApiError(401, "User not found");
+    const updateTweet = await Tweet.updateOne(
+      {
+        _id: commentId,
+      },
+      {
+        $set: {
+          content: content,
+        },
+      }
+    );
+    if (!updateTweet) {
+      throw new ApiError(500, "Twwet not updated");
+    }
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          updateTweet,
+        },
+        "successfully updated"
+      )
+    );
+  } catch (error) {
+    throw new ApiError(400, error.message || "Error during update user tweets");
+  }
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
-  //TODO: delete tweet
+  //delete tweet
+  try {
+    const { commentId } = req.params;
+    const userId = req.user._id;
+    const ownerDetails = await Tweet.findOne({
+      owner: new mongoose.Types.ObjectId(userId),
+    }).select("-content");
+    if (!ownerDetails) throw new ApiError(401, "not authentic");
+    const deleteTweet = await Tweet.findByIdAndDelete(commentId);
+    if (!deleteTweet) throw new ApiError(500, "unable to delete tweet");
+
+    return res.status(200).json(new ApiResponse(200, { deleteTweet }, "Succe"));
+  } catch (error) {
+    throw new ApiError(401, e.message || "Some error occurred");
+  }
 });
 
 export { createTweet, getUserTweets, updateTweet, deleteTweet };
